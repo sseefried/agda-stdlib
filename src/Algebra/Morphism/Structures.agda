@@ -124,6 +124,94 @@ module MonoidMorphisms (M₁ : RawMonoid a ℓ₁) (M₂ : RawMonoid b ℓ₂) w
     open IsMagmaIsomorphism isMagmaIsomorphism public
       using (isRelIsomorphism)
 
+  open import Algebra.Structures
+  open import Algebra.Definitions
+
+  foo : {⟦_⟧ : A → B} → IsMonoidMonomorphism ⟦_⟧ → IsMonoid _≈₂_ _◦_ ε₂  → IsMonoid (λ a b → ⟦ a ⟧ ≈₂ ⟦ b ⟧) _∙_ ε₁
+  foo {⟦_⟧} mh is-monoid₂ =
+    record
+      { isSemigroup =
+          record
+            { isMagma =
+                record
+                  { isEquivalence = record { refl = refl; sym = sym; trans = trans }
+                  ; ∙-cong = ∙-congruent
+                  }
+            ; assoc = ∙-assoc
+            }
+      ; identity = ∙-identityˡ , ∙-identityʳ
+      }
+    where
+      _≈_ : A → A → Set ℓ₂
+      a ≈ b = ⟦ a ⟧ ≈₂ ⟦ b ⟧
+      open import Data.Product using (_,_)
+      open IsMonoid ⦃ … ⦄ public
+      open IsMonoidMonomorphism ⦃ … ⦄ public
+
+      instance
+        _ : IsMonoid _≈₂_ _◦_ ε₂
+        _ = is-monoid₂
+
+        _ : IsMonoidMonomorphism ⟦_⟧
+        _ = mh
+
+        _ : IsMonoidHomomorphism ⟦_⟧
+        _ = isMonoidHomomorphism
+
+      open import Relation.Binary.Reasoning.Setoid (setoid)
+
+      ∙-congruent : Congruent₂ _≈_ _∙_
+      ∙-congruent {x} {y} {u} {v} x≈₁y u≈₁v =
+        begin
+          ⟦ x ∙ u ⟧
+        ≈⟨ homo x u  ⟩
+          ⟦ x ⟧ ◦ ⟦ u ⟧
+        ≈⟨ ∙-cong x≈₁y u≈₁v   ⟩
+          ⟦ y ⟧ ◦ ⟦ v ⟧
+        ≈⟨ sym (homo y v)  ⟩
+          ⟦ y ∙ v ⟧
+        ∎
+
+      ∙-identityˡ : LeftIdentity _≈_ ε₁ _∙_
+      ∙-identityˡ x =
+        begin
+          ⟦ ε₁ ∙ x ⟧
+        ≈⟨ homo ε₁ x  ⟩
+          ⟦ ε₁ ⟧ ◦ ⟦ x ⟧
+        ≈⟨ ∙-congʳ ε-homo ⟩
+          ε₂ ◦ ⟦ x ⟧
+        ≈⟨ identityˡ ⟦ x ⟧ ⟩
+          ⟦ x ⟧
+        ∎
+
+      ∙-identityʳ : RightIdentity _≈_ ε₁ _∙_
+      ∙-identityʳ x =
+        begin
+          ⟦ x ∙ ε₁ ⟧
+        ≈⟨ homo x ε₁ ⟩
+          ⟦ x ⟧ ◦ ⟦ ε₁ ⟧
+        ≈⟨ ∙-congˡ ε-homo ⟩
+          ⟦ x ⟧ ◦ ε₂
+        ≈⟨ identityʳ ⟦ x ⟧ ⟩
+          ⟦ x ⟧
+        ∎
+
+      ∙-assoc : Associative _≈_ _∙_
+      ∙-assoc x y z =
+        begin
+          ⟦ (x ∙ y) ∙ z ⟧
+        ≈⟨ homo (x ∙ y) z ⟩
+          ⟦ x ∙ y ⟧ ◦ ⟦ z ⟧
+        ≈⟨ ∙-congʳ (homo x y) ⟩
+          (⟦ x ⟧ ◦ ⟦ y ⟧) ◦ ⟦ z ⟧
+        ≈⟨ assoc ⟦ x ⟧ ⟦ y ⟧ ⟦ z ⟧ ⟩
+          ⟦ x ⟧ ◦ (⟦ y ⟧ ◦ ⟦ z ⟧)
+        ≈⟨ sym  (∙-congˡ (homo y z)) ⟩
+          ⟦ x ⟧ ◦ ⟦ y ∙ z ⟧
+        ≈⟨ sym (homo x (y ∙ z)) ⟩
+          ⟦ x ∙ (y ∙ z) ⟧
+        ∎
+
 
 ------------------------------------------------------------------------
 -- Morphisms over group-like structures
